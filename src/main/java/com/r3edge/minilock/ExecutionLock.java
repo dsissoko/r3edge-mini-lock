@@ -118,19 +118,50 @@ public class ExecutionLock {
 	/**
 	 * Enum représentant les statuts possibles d'un verrou.
 	 */
+	/**
+	 * Statut d’un verrou d’exécution.
+	 */
 	public enum LockStatus {
-		LOCKED, // 🔒 La ressource est verrouillée
-		RELEASED // 🔓 La ressource est libérée
+
+	    /**
+	     * La ressource est actuellement verrouillée.
+	     */
+	    LOCKED,
+
+	    /**
+	     * La ressource a été libérée.
+	     */
+	    RELEASED
 	}
 
 	/**
 	 * Enum décrivant la raison pour laquelle un verrou a été libéré.
 	 */
 	public enum LockDetail {
-		NORMAL_RELEASE, // 🔓 Lock libéré normalement après utilisation
-		TIMEOUT_EXPIRED, // ⏳ Lock libéré car son expiration a été atteinte
-		FORCE_RELEASE_BY_ADMIN, // ⚠️ Lock libéré manuellement par un admin
-		SYSTEM_SHUTDOWN, // 🛑 Lock libéré car le système a été arrêté
-		ERROR_DURING_PROCESS // ❌ Lock libéré suite à une erreur dans le process
+
+	    /**
+	     * Verrou libéré normalement après l’exécution.
+	     */
+	    NORMAL_RELEASE,
+
+	    /**
+	     * Verrou libéré automatiquement car le timeout a expiré.
+	     */
+	    TIMEOUT_EXPIRED,
+
+	    /**
+	     * Verrou libéré manuellement par un administrateur.
+	     */
+	    FORCE_RELEASE_BY_ADMIN,
+
+	    /**
+	     * Verrou libéré automatiquement à l’arrêt du système.
+	     */
+	    SYSTEM_SHUTDOWN,
+
+	    /**
+	     * Verrou libéré à cause d’une erreur pendant le traitement.
+	     */
+	    ERROR_DURING_PROCESS
 	}
 }

@@ -95,18 +95,45 @@ public class ExecutionLockService {
 		return true;
 	}
 
+	/**
+	 * Libère un verrou normalement (cas nominal).
+	 *
+	 * @param resource Nom de la ressource verrouillée.
+	 * @param locker Identifiant de l’instance qui détenait le verrou.
+	 * @return true si le verrou a été libéré, false sinon.
+	 */
 	public boolean releaseLockNormal(String resource, String locker) {
 		return releaseLock(resource, locker, LockDetail.NORMAL_RELEASE);
 	}
 
+	/**
+	 * Libère un verrou expiré (détection automatique d’un timeout).
+	 *
+	 * @param resource Nom de la ressource.
+	 * @return true si le verrou a été libéré, false sinon.
+	 */
 	public boolean releaseLockTimeout(String resource) {
 		return releaseLock(resource, "SYSTEM", LockDetail.TIMEOUT_EXPIRED);
 	}
 
+	/**
+	 * Libération forcée par un administrateur.
+	 *
+	 * @param resource Nom de la ressource.
+	 * @param adminUser Identifiant de l’administrateur effectuant la libération.
+	 * @return true si le verrou a été libéré, false sinon.
+	 */
 	public boolean forceReleaseLock(String resource, String adminUser) {
 		return releaseLock(resource, adminUser, LockDetail.FORCE_RELEASE_BY_ADMIN);
 	}
 
+	/**
+	 * Libération d’un verrou lors de l’arrêt du système.
+	 *
+	 * @param resource Nom de la ressource verrouillée.
+	 * @param locker Identifiant de l’instance qui détenait le verrou.
+	 * @return true si le verrou a été libéré, false sinon.
+	 */
 	public boolean releaseLockOnShutdown(String resource, String locker) {
 		return releaseLock(resource, locker, LockDetail.SYSTEM_SHUTDOWN);
 	}
