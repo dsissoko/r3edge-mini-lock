@@ -20,6 +20,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
 
       - name: Setup Java
         uses: actions/setup-java@v3
