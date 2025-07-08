@@ -27,6 +27,14 @@ configurations {
     }
 }
 
+// Au sommet de build.gradle
+def ghUser = project.findProperty('gpr.user') 
+             ?: System.getenv('GPR_USER') 
+             ?: System.getenv('GITHUB_ACTOR')
+def ghKey  = project.findProperty('gpr.key')  
+             ?: System.getenv('GPR_KEY')  
+             ?: System.getenv('GITHUB_TOKEN')
+
 repositories {
     mavenCentral()
     mavenLocal()
@@ -138,8 +146,8 @@ publishing {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/dsissoko/r3edge-mini-lock")
             credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USER")
-                password = project.findProperty("gpr.key") ?: System.getenv("TWEAKED_PAT")
+                username = ghUser
+                password = ghKey
             }
         }
     }
