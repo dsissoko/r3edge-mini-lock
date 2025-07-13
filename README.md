@@ -37,6 +37,18 @@ Interface Spring Data prête à l’emploi avec méthodes natives pour :
 
 ---
 
+## 📦 Compatibilité
+
+✅ Testée avec :  
+- **Spring Boot** `3.5.3`  
+- **Spring Cloud** `2025.0.0`  
+- **Java** `17` et `21`
+
+🧘 Lib légère, sans dépendance transitive aux starters : fonctionne avec toute stack Spring moderne.  
+Pas de `fat-jar`, pas de verrouillage.
+
+---
+
 ## 🔧 Intégration dans un projet Spring Boot
 
 Ajoutez la dépendance :
