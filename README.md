@@ -55,7 +55,7 @@ Ajoutez la dépendance :
 
 ```groovy
 dependencies {
-    implementation "com.r3edge:r3edge-mini-lock:0.0.3"
+    implementation "com.r3edge:r3edge-mini-lock:0.0.5"
     implementation "org.springframework.boot:spring-boot-starter-data-jpa"
     runtimeOnly "org.postgresql:postgresql" // ou autre driver JDBC
 }
