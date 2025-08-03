@@ -8,10 +8,10 @@
 > ✅ 1 **API ultra-simple** : Demandez un lock par nom, exécutez, relâchez, c’est tout  
 > ✅ **100 % Spring Boot 3.x** (utilise JPA pour la persistence)   
 > ✅ Vous permet de couvrir **simplement** les principaux Cloud Design Patterns de gestion concurrente :
->  - [Scheduler Agent Supervisor](https://learn.microsoft.com/en-us/azure/architecture/patterns/scheduler-agent-supervisor)
->  - [Leader Election](https://learn.microsoft.com/en-us/azure/architecture/patterns/leader-election)
+>  - [Scheduler Agent Supervisor](https://learn.microsoft.com/en-us/azure/architecture/patterns/scheduler-agent-supervisor)  
+>  - [Leader Election](https://learn.microsoft.com/en-us/azure/architecture/patterns/leader-election)  
 >  - [Competing Consumers](https://learn.microsoft.com/en-us/azure/architecture/patterns/competing-consumers)  
-> ✅ Parfaitement complémentaire avec [`r3edge-task-dispatcher`](https://github.com/dsissoko/r3edge-task-dispatcher) pour garantir l’exclusivité des tâches planifiées en environnement distribué. 
+> ✅ Parfaitement complémentaire avec [`r3edge-task-dispatcher`](https://github.com/dsissoko/r3edge-task-dispatcher) pour garantir l’exclusivité des tâches planifiées en environnement distribué.  
 
 This project is documented in French 🇫🇷 by default.  
 An auto-translated English version is available here:
