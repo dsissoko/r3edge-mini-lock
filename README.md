@@ -50,11 +50,16 @@ repositories {
 }
 
 dependencies {
+    // Spring Boot
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    
+    // Base de données
+    implementation 'org.postgresql:postgresql:42.7.7'
+    
+    // Pour mini-lock
     implementation "com.r3edge:r3edge-mini-lock:0.0.6"
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    // À adapter selon votre base de données:
-    runtimeOnly 'org.postgresql:postgresql'
-    // ou runtimeOnly 'com.h2database:h2' pour les tests
+    testImplementation 'com.h2database:h2'
 }
 ```
 
@@ -92,24 +97,95 @@ spring:
 ### Utiliser le service de lock dans votre code :
 
 ```java
+package com.example.demo;
+
+import java.time.Duration;
+import java.util.concurrent.Callable;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 import com.r3edge.minilock.ExecutionLockService;
+
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
-public class MonJob {
+@Slf4j
+public class DemoService {
+
+    private static final String RESOURCE_TEASER = "teaser-ai-extraction";
 
     private final ExecutionLockService lockService;
 
-    public void execute() {
-        if(lockService.acquireLock("MON_JOB", Duration.ofMinutes(5))) {
+    @Value("${spring.application.name:default-locker}")
+    private String locker;
+
+    // 👁‍🗨 MÉTHODE "MÉTIER" À PROTÉGER ABSOLUMENT
+    private void videoTeasingAIExtraction() {
+        log.info("🎬 Extraction teaser vidéo par IA en cours...");
+        // Simulation d'un gros traitement IA
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        log.info("✅ Teaser généré !");
+    }
+
+    // 1️⃣ - Acquire/release manuel
+    public boolean extractTeaser_acquireRelease() {
+        long timeout = 60000;
+
+        boolean locked = lockService.acquireLock(RESOURCE_TEASER, locker, timeout);
+        if (locked) {
             try {
-                // Placez ici votre code à protéger en mutex
+                videoTeasingAIExtraction();
+                return true;
             } finally {
-                lockService.releaseLock("MON_JOB");
+                lockService.releaseLockNormal(RESOURCE_TEASER, locker);
             }
         } else {
-            // Un autre process détient déjà le lock, skip ou logguez à votre convenance
+            log.warn("⛔ Teaser déjà en cours sur cette vidéo !");
+            return false;
         }
+    }
+
+    // 2️⃣ - Protection auto via runIfUnlocked (Runnable)
+    public boolean extractTeaser_runIfUnlocked() {
+        return lockService.runIfUnlocked(
+            RESOURCE_TEASER,
+            Duration.ofSeconds(30),
+            this::videoTeasingAIExtraction
+        );
+    }
+
+    // 3️⃣ - Protection auto via runIfUnlockedThrowing (Callable<T>)
+    public String extractTeaser_runIfUnlockedThrowing() throws Exception {
+        return lockService.runIfUnlockedThrowing(
+            RESOURCE_TEASER,
+            Duration.ofSeconds(30),
+            (Callable<String>) () -> {
+                videoTeasingAIExtraction();
+                return "Teaser généré (avec retour)";
+            }
+        );
+    }
+
+    // Ajout d'un hook pour libérer le lock sur shutdown (ex: dernier teaser traité)
+    @PostConstruct
+    public void registerShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("🛑 Shutdown hook: libération du lock pour resource={}", RESOURCE_TEASER);
+            boolean released = lockService.releaseLockOnShutdown(RESOURCE_TEASER, locker);
+            if (released) {
+                log.info("Lock sur '{}' libéré proprement à l'arrêt.", RESOURCE_TEASER);
+            } else {
+                log.warn("Aucun lock à libérer pour '{}', ou déjà libéré.", RESOURCE_TEASER);
+            }
+        }));
     }
 }
 ```
@@ -120,7 +196,37 @@ public class MonJob {
 
 ```sql
 Hibernate: create table execution_lock (lock_expires_at timestamp(6), locked_at timestamp(6), updated_at timestamp(6), lock_detail varchar(50) check (lock_detail in ('NORMAL_RELEASE','TIMEOUT_EXPIRED','FORCE_RELEASE_BY_ADMIN','SYSTEM_SHUTDOWN','ERROR_DURING_PROCESS')), locked_by varchar(255), resource varchar(255) not null, status varchar(255) check (status in ('LOCKED','RELEASED')), primary key (resource))
-``` 
+```
+
+> Min lock affiche des logs explicites en cas d'échec d'acquisition de verrou
+
+```test
+2025-08-03T18:13:00.437+02:00  INFO 10484 --- [r3edge-mini-lock-starter] [       Thread-8] c.r3edge.minilock.ExecutionLockService  : ✅ Lock acquis pour teaser-ai-extraction par r3edge-mini-lock-starter
+2025-08-03T18:13:00.445+02:00  INFO 10484 --- [r3edge-mini-lock-starter] [       Thread-8] com.example.demo.DemoService            : 🎬 Extraction teaser vidéo par IA en cours...
+2025-08-03T18:13:00.472+02:00 ERROR 10484 --- [r3edge-mini-lock-starter] [      Thread-10] o.h.engine.jdbc.spi.SqlExceptionHelper  : ERROR: duplicate key value violates unique constraint "execution_lock_pkey"
+  Détail : Key (resource)=(teaser-ai-extraction) already exists.
+2025-08-03T18:13:00.472+02:00 ERROR 10484 --- [r3edge-mini-lock-starter] [       Thread-9] o.h.engine.jdbc.spi.SqlExceptionHelper  : ERROR: duplicate key value violates unique constraint "execution_lock_pkey"
+  Détail : Key (resource)=(teaser-ai-extraction) already exists.
+2025-08-03T18:13:00.649+02:00  WARN 10484 --- [r3edge-mini-lock-starter] [      Thread-10] c.r3edge.minilock.ExecutionLockService  : 
+❌ LOCK CONCURRENT ACQUISITION FAILED
+  - Resource     : teaser-ai-extraction
+  - Locker lost  : default-locker
+  - Locker owner : r3edge-mini-lock-starter
+  - Status       : LOCKED
+
+2025-08-03T18:13:00.649+02:00  WARN 10484 --- [r3edge-mini-lock-starter] [      Thread-10] c.r3edge.minilock.ExecutionLockService  : ⛔ Impossible d'acquérir le lock pour teaser-ai-extraction
+2025-08-03T18:13:00.649+02:00  INFO 10484 --- [r3edge-mini-lock-starter] [      Thread-10] com.example.demo.DemoConcurrentRunner   : Thread 3 (runIfUnlockedThrowing): LOCK FAIL
+2025-08-03T18:13:00.650+02:00  WARN 10484 --- [r3edge-mini-lock-starter] [       Thread-9] c.r3edge.minilock.ExecutionLockService  : 
+❌ LOCK CONCURRENT ACQUISITION FAILED
+  - Resource     : teaser-ai-extraction
+  - Locker lost  : default-locker
+  - Locker owner : r3edge-mini-lock-starter
+  - Status       : LOCKED
+
+2025-08-03T18:13:00.651+02:00  WARN 10484 --- [r3edge-mini-lock-starter] [       Thread-9] c.r3edge.minilock.ExecutionLockService  : ⛔ Impossible d'acquérir le lock pour teaser-ai-extraction
+2025-08-03T18:13:00.651+02:00  INFO 10484 --- [r3edge-mini-lock-starter] [       Thread-9] com.example.demo.DemoConcurrentRunner   : Thread 2 (runIfUnlocked): LOCK FAIL
+
+```
 
 ---
 
@@ -142,6 +248,7 @@ Hibernate: create table execution_lock (lock_expires_at timestamp(6), locked_at 
 
 ### 🧠 En réflexion
 - Proposer d'avantage d'options de configuration
+- Messages i18n
 
 ---
 
