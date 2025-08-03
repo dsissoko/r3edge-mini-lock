@@ -3,12 +3,15 @@
 **Librairie Java pour permettre une exécution mutex de vos charges de travail dans le cloud.**
 
 > 🚀 Pourquoi adopter `r3edge-mini-lock` ?
->
+> 
+> ✅ **Autoconfiguration** avec création automatique de la table de gestion des locks  
 > ✅ 1 **API ultra-simple** : Demandez un lock par nom, exécutez, relâchez, c’est tout  
-> ✅ Mutex distribué, compatible **multi-instances/cloud**  
-> ✅ S’appuie sur la base de données pour garantir l’exclusivité  
-> ✅ **100 % Spring Boot 3.x**  
-> ✅ Utilise JPA pour la persistence  
+> ✅ **100 % Spring Boot 3.x** (utilise JPA pour la persistence)   
+> ✅ Vous permet de couvrir **simplement** les principaux Cloud Design Patterns de gestion concurrente :
+>  - [Scheduler Agent Supervisor](https://learn.microsoft.com/en-us/azure/architecture/patterns/scheduler-agent-supervisor)
+>  - [Leader Election](https://learn.microsoft.com/en-us/azure/architecture/patterns/leader-election)
+>  - [Competing Consumers](https://learn.microsoft.com/en-us/azure/architecture/patterns/competing-consumers)
+
 > ✅ Parfaitement complémentaire avec [`r3edge-task-dispatcher`](https://github.com/dsissoko/r3edge-task-dispatcher) pour garantir l’exclusivité des tâches planifiées en environnement distribué. 
 
 This project is documented in French 🇫🇷 by default.  
@@ -20,13 +23,11 @@ An auto-translated English version is available here:
 
 ## 📋 Fonctionnalités clés
 
-- ✅ Verrouillage distribué (mutex) basé sur le nom et l’expiration  
-- ✅ Détection atomique du lock via la base de données  
+- ✅ Pose d'un verrou en 1 ligne de code
 - ✅ Libération explicite du lock ou expiration automatique  
-- ✅ Nettoyage automatique des locks expirés (voir section maintenance)  
+- ✅ Nettoyage automatique des locks expirés avec délai d'expiration configurable  
 - ✅ Compatible avec toutes les bases supportées par Spring Data JPA  
 - ✅ Prêt à l’emploi grâce à l’autoconfiguration Spring Boot  
-- ✅ Utilisable dans vos microservices ou jobs planifiés pour éviter les doublons d’exécution
 
 ---
 
@@ -61,12 +62,12 @@ dependencies {
 > Il faudra donc valoriser ghUser et ghKey dans votre gradle.properties:
 
 ```properties
-#pour réccupérer des packages github 
+#pour récupérer des packages github 
 ghUser=your_github_user
 ghKey=github_token_with_read_package_scope
 ```
 
-### Configuer le **datasource** puis Activer mini-lock dans votre configuration Spring Boot:
+### Configurer le **datasource** puis Activer mini-lock dans votre configuration Spring Boot:
 
 ```yaml
 r3edge:
@@ -100,6 +101,16 @@ public class MonJob {
 }
 ```
 
+### Lancer votre service
+
+> ℹ️ Au 1er démarrage, mini lock va créer la table de verrou automatiquement:
+
+```sql
+Hibernate: create table execution_lock (lock_expires_at timestamp(6), locked_at timestamp(6), updated_at timestamp(6), lock_detail varchar(50) check (lock_detail in ('NORMAL_RELEASE','TIMEOUT_EXPIRED','FORCE_RELEASE_BY_ADMIN','SYSTEM_SHUTDOWN','ERROR_DURING_PROCESS')), locked_by varchar(255), resource varchar(255) not null, status varchar(255) check (status in ('LOCKED','RELEASED')), primary key (resource))
+``` 
+
+---
+
 ## 📦 Stack de référence
 
 ✅ Cette librairie a été conçue et testée avec :
@@ -114,12 +125,10 @@ public class MonJob {
 ## 🗺️ Roadmap
 
 ### 🔧 À venir
-- Statistiques sur les locks actifs/anciens
-- Purge automatique des anciens locks
+- Rien: mini lock est volontairement minimaliste
 
 ### 🧠 En réflexion
-- Support d’alerting en cas de contention récurrente
-- Mode cluster sans JPA (Redis, etc.)
+- Proposer d'avantage d'options de configuration
 
 ---
 
