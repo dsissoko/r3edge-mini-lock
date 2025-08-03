@@ -50,7 +50,7 @@ repositories {
 }
 
 dependencies {
-    implementation "com.r3edge:r3edge-mini-lock:0.1.0"
+    implementation "com.r3edge:r3edge-mini-lock:0.0.6"
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     // À adapter selon votre base de données:
     runtimeOnly 'org.postgresql:postgresql'
@@ -71,10 +71,23 @@ ghKey=github_token_with_read_package_scope
 
 ```yaml
 r3edge:
-  minilock:
-    enabled: true      # true par défaut
-    # ttl-seconds: 60  # Durée par défaut d’un lock (optionnel, défaut : 60s)
+  minilock: # pas de configuration à faire pour l'instant
+    # cleanup_expired_frequency: 10*60 # par défaut 15 minutes
+    
+spring:
+  datasource:
+    url: jdbc:postgresql://mainline.proxy.rlwy.net:24622/railway
+    username: app_user
+    password: big_strong_password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
 ```
+
+> ⚠️ Pour bénéficier de la fonction de nettoyage automatique des verrous, nous devez **configurer votre appl Spring Boot avec @EnableScheduling**.  
 
 ### Utiliser le service de lock dans votre code :
 

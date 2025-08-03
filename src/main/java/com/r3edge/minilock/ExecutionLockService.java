@@ -54,8 +54,21 @@ public class ExecutionLockService {
 		}
 
 		ExecutionLock newLock = new ExecutionLock(resource, locker, timeoutMillis);
+		try {
 		executionLockRepository.save(newLock);
 		log.info("✅ Lock acquis pour {} par {}", resource, locker);
+		} catch (org.springframework.dao.DataIntegrityViolationException e) {
+		    Optional<ExecutionLock> current = executionLockRepository.findById(resource);
+		    String owner = current.map(ExecutionLock::getLocked_by).orElse("<unknown>");
+		    String status = current.map(lock -> lock.getStatus().toString()).orElse("<unknown>");
+		    log.warn("\n❌ LOCK CONCURRENT ACQUISITION FAILED\n"
+		           + "  - Resource     : {}\n"
+		           + "  - Locker lost  : {}\n"
+		           + "  - Locker owner : {}\n"
+		           + "  - Status       : {}\n",
+		           resource, locker, owner, status);
+		    return false;
+	    }
 		return true;
 	}
 
