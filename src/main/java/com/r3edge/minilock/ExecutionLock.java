@@ -40,15 +40,15 @@ public class ExecutionLock {
 
 	/** Horodatage du moment où le verrou a été acquis. */
 	@NonNull
-	private LocalDateTime locked_at;
+	private LocalDateTime lockedAt;
 
 	/** Dernière mise à jour du verrou. */
 	@NonNull
-	private LocalDateTime updated_at;
+	private LocalDateTime updatedAt;
 
 	/** Date d'expiration du verrou. */
 	@NonNull
-	private LocalDateTime lock_expires_at;
+	private LocalDateTime lockExpiresAt;
 
 	/** Statut actuel du verrou (LOCKED ou RELEASED). */
 	@Enumerated(EnumType.STRING)
@@ -57,7 +57,7 @@ public class ExecutionLock {
 
 	/** Identifiant de l'instance qui détient le verrou. */
 	@NonNull
-	private String locked_by;
+	private String lockedBy;
 
 	/**
 	 * Détail de la libération du verrou (ex: expiration, libération normale, etc.).
@@ -85,11 +85,11 @@ public class ExecutionLock {
 	 */
 	public ExecutionLock(String resourceToLock, String locker, long expirationMilli) {
 		this.resource = resourceToLock;
-		this.locked_at = LocalDateTime.now();
-		this.updated_at = locked_at;
+		this.lockedAt = LocalDateTime.now();
+		this.updatedAt = lockedAt;
 		this.status = LockStatus.LOCKED;
-		this.locked_by = locker;
-		this.lock_expires_at = this.locked_at.plusNanos(expirationMilli * 1_000_000L);
+		this.lockedBy = locker;
+		this.lockExpiresAt = this.lockedAt.plusNanos(expirationMilli * 1_000_000L);
 	}
 
 	/**
@@ -102,7 +102,7 @@ public class ExecutionLock {
 	public ExecutionLock updateStatus(LockStatus status, LockDetail lockDetail) {
 		this.status = status;
 		this.lockDetail = lockDetail;
-		this.updated_at = LocalDateTime.now(); // Mise à jour de l'horodatage
+		this.updatedAt = LocalDateTime.now(); // Mise à jour de l'horodatage
 		return this;
 	}
 
@@ -112,7 +112,7 @@ public class ExecutionLock {
 	 * @return {@code true} si le verrou est expiré, sinon {@code false}.
 	 */
 	public boolean isExpired() {
-		return LocalDateTime.now().isAfter(lock_expires_at);
+		return LocalDateTime.now().isAfter(lockExpiresAt);
 	}
 
 	/**

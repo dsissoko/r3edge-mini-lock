@@ -43,7 +43,7 @@ public class ExecutionLockService {
 		if (existingLockOpt.isPresent()) {
 			ExecutionLock existingLock = existingLockOpt.get();
 			if (existingLock.getStatus() == LockStatus.LOCKED && !existingLock.isExpired()) {
-				log.warn("⛔ Lock déjà actif pour {} par {}", resource, existingLock.getLocked_by());
+				log.warn("⛔ Lock déjà actif pour {} par {}", resource, existingLock.getLockedBy());
 				return false;
 			}
 			log.info("♻️ Lock existant mais réutilisable pour {}, ancien statut: {}", resource, existingLock.getStatus());
@@ -59,7 +59,7 @@ public class ExecutionLockService {
 		log.info("✅ Lock acquis pour {} par {}", resource, locker);
 		} catch (org.springframework.dao.DataIntegrityViolationException e) {
 		    Optional<ExecutionLock> current = executionLockRepository.findById(resource);
-		    String owner = current.map(ExecutionLock::getLocked_by).orElse("<unknown>");
+		    String owner = current.map(ExecutionLock::getLockedBy).orElse("<unknown>");
 		    String status = current.map(lock -> lock.getStatus().toString()).orElse("<unknown>");
 		    log.warn("\n❌ LOCK CONCURRENT ACQUISITION FAILED\n"
 		           + "  - Resource     : {}\n"
@@ -91,17 +91,17 @@ public class ExecutionLockService {
 		ExecutionLock existingLock = existingLockOpt.get();
 
 		if (existingLock.getStatus() == LockStatus.RELEASED) {
-			log.warn("⚠️ Lock déjà libéré pour {} par {}", resource, existingLock.getLocked_by());
+			log.warn("⚠️ Lock déjà libéré pour {} par {}", resource, existingLock.getLockedBy());
 			return false;
 		}
 
-		if (!existingLock.getLocked_by().equals(locker)) {
-			log.warn("⛔ Tentative de libération d'un lock par un autre locker ! {} ≠ {}", locker, existingLock.getLocked_by());
+		if (!existingLock.getLockedBy().equals(locker)) {
+			log.warn("⛔ Tentative de libération d'un lock par un autre locker ! {} ≠ {}", locker, existingLock.getLockedBy());
 			return false;
 		}
 
 		existingLock.updateStatus(LockStatus.RELEASED, reason);
-		existingLock.setUpdated_at(LocalDateTime.now());
+		existingLock.setUpdatedAt(LocalDateTime.now());
 		executionLockRepository.save(existingLock);
 
 		log.info("✅ Lock libéré avec succès pour {} par {}", resource, locker);
@@ -157,7 +157,7 @@ public class ExecutionLockService {
 	@Scheduled(fixedRate = 900_000)
 	public void autoReleaseExpiredLocks() {
 		LocalDateTime now = LocalDateTime.now();
-		List<ExecutionLock> expiredLocks = executionLockRepository.findExpiredLocks(now);
+		List<ExecutionLock> expiredLocks = executionLockRepository.loadExpiredLocks(now);
 
 		if (expiredLocks.isEmpty()) {
 			log.info("✅ Aucun lock expiré à libérer.");
@@ -167,7 +167,7 @@ public class ExecutionLockService {
 		log.info("🔍 {} locks expirés détectés, libération en cours...", expiredLocks.size());
 
 		for (ExecutionLock lock : expiredLocks) {
-			log.info("⏳ Lock expiré détecté : {} détenu par {}", lock.getResource(), lock.getLocked_by());
+			log.info("⏳ Lock expiré détecté : {} détenu par {}", lock.getResource(), lock.getLockedBy());
 			releaseLockTimeout(lock.getResource());
 		}
 

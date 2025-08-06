@@ -92,7 +92,7 @@ spring:
 
 ```
 
-> ⚠️ Pour bénéficier de la fonction de nettoyage automatique des verrous, nous devez **configurer votre appl Spring Boot avec @EnableScheduling**.  
+> ⚠️ Pour bénéficier de la fonction de nettoyage automatique des verrous, nous devez **configurer votre app Spring Boot avec @EnableScheduling**.  
 
 ### Utiliser le service de lock dans votre code :
 
@@ -198,7 +198,7 @@ public class DemoService {
 Hibernate: create table execution_lock (lock_expires_at timestamp(6), locked_at timestamp(6), updated_at timestamp(6), lock_detail varchar(50) check (lock_detail in ('NORMAL_RELEASE','TIMEOUT_EXPIRED','FORCE_RELEASE_BY_ADMIN','SYSTEM_SHUTDOWN','ERROR_DURING_PROCESS')), locked_by varchar(255), resource varchar(255) not null, status varchar(255) check (status in ('LOCKED','RELEASED')), primary key (resource))
 ```
 
-> Min lock affiche des logs explicites en cas d'échec d'acquisition de verrou
+> Mini lock affiche des logs explicites en cas d'échec d'acquisition de verrou
 
 ```test
 2025-08-03T18:13:00.437+02:00  INFO 10484 --- [r3edge-mini-lock-starter] [       Thread-8] c.r3edge.minilock.ExecutionLockService  : ✅ Lock acquis pour teaser-ai-extraction par r3edge-mini-lock-starter
