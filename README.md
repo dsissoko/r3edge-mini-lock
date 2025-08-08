@@ -57,7 +57,7 @@ dependencies {
     implementation 'org.postgresql:postgresql:42.7.7'
     
     // Pour mini-lock
-    implementation "com.r3edge:r3edge-mini-lock:0.0.6"
+    implementation "com.r3edge:r3edge-mini-lock:0.0.7"
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     testImplementation 'com.h2database:h2'
 }
